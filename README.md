@@ -126,4 +126,5 @@ Every lab includes a pre-simulation in LTSpice and hardware verification on brea
 2. Copy `LM339.sub` from `Lab1_Ramp_Generator/simulation/` into your LTSpice `lib/sub/` folder
 3. Open any `.asc` file and press **Run**
 4. Click any wire to probe that node
+5. webpage for simulation :file:///Users/gagansharma/Downloads/analog_lab_interactive.html
 ````
