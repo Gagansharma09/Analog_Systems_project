@@ -1,4 +1,4 @@
-# Lab 1 — IC Pin Connections
+# Lab 1 — IC Pin Connections (VERIFIED WORKING)
 
 ## MCP6004 Pinout Reference
 ```
@@ -17,13 +17,13 @@
 ## LM339 Pinout Reference
 ```
         ┌──────────┐
- OUT1───┤1        14├── OUT4
- IN1-───┤2        13├── IN4-
- IN1+───┤3        12├── IN4+
-  VCC───┤4        11├── GND
- IN2+───┤5        10├── IN3+
- IN2-───┤6         9├── IN3-
- OUT2───┤7         8├── OUT3
+ 1OUT───┤1        14├── 4OUT
+ 2OUT───┤2        13├── 4IN-
+  VCC───┤3        12├── GND
+ 2IN-───┤4        11├── 4IN+
+ 2IN+───┤5        10├── 3IN-
+ 1IN-───┤6         9├── 3IN+
+ 1IN+───┤7         8├── 3OUT
         └──────────┘
      (notch/dot at top-left)
 ```
@@ -36,7 +36,8 @@
 |-----------|-----------|
 | +5V | +5V rail (red) |
 | GND | GND rail (black) |
-| CHB | probe only — no output |
+| CHA | NOT used — Lab 1 is self-oscillating |
+| CHB | probe only |
 
 ---
 
@@ -48,6 +49,7 @@
 | VCM node | GND rail | 10kΩ (Brown-Black-Orange) |
 
 **VCM node = 2.5V**
+> Verify VCM = 2.5V BEFORE connecting to any IC pin
 
 ---
 
@@ -57,54 +59,56 @@
 |-----|---------|-----------|--------|
 | pin 4 | VDD | +5V rail | 5V |
 | pin 11 | GND | GND rail | 0V |
-| pin 3 | IN+A | VCM node | 2.5V DC |
-| pin 2 | IN−A | LM339 pin1 through R1 (22kΩ) | VSQR via R1 |
-| pin 1 | OUTA | pin2 through C1 (10nF) | VRAMP output |
-| pin 1 | OUTA | LM339 pin3 through R2 (10kΩ) | VRAMP to Schmitt |
+| pin 3 | IN+A | VCM node | 2.5V DC bias |
+| pin 2 | IN−A | LM339 pin1 through 22kΩ (R1) | VSQR feedback |
+| pin 1 | OUTA | pin2 through 10nF (C1) | integrator capacitor |
+| pin 1 | OUTA | LM339 pin7 through 10kΩ (R2) | VRAMP to Schmitt |
 
 **VRAMP = MCP6004 pin 1**
-Expected: triangle wave, ~5.3kHz, ~1.06Vpp, centered at 2.5V
+Expected: triangle wave, ~5.3kHz, ~1.4Vpp, centered at 2.5V
 
 ---
 
-## LM339 IC#1 — Schmitt Trigger (Comparator 1: pins 1,2,3)
+## LM339 IC#1 — Schmitt Trigger (Comparator 1: pins 1,6,7)
 
 | Pin | Function | Connect To | Signal |
 |-----|---------|-----------|--------|
-| pin 4 | VCC | +5V rail | 5V |
-| pin 11 | GND | GND rail | 0V |
-| pin 2 | IN1− | VCM node | 2.5V reference |
-| pin 3 | IN1+ | MCP6004 pin1 through R2 (10kΩ) | VRAMP |
-| pin 3 | IN1+ | LM339 pin1 through R3 (47kΩ) | feedback |
-| pin 1 | OUT1 | MCP6004 pin2 through R1 (22kΩ) | VSQR to integrator |
-| pin 1 | OUT1 | +5V through 10kΩ pull-up | open-collector pull-up |
+| pin 3 | VCC | +5V rail | 5V |
+| pin 12 | GND | GND rail | 0V |
+| pin 6 | IN1− | VCM node | 2.5V reference |
+| pin 7 | IN1+ | MCP6004 pin1 through 10kΩ (R2) | VRAMP input |
+| pin 7 | IN1+ | LM339 pin1 through 47kΩ (R3) | hysteresis feedback |
+| pin 1 | OUT1 | MCP6004 pin2 through 22kΩ (R1) | VSQR to integrator |
+| pin 1 | OUT1 | +5V through 10kΩ | open-collector pull-up |
 
 **VSQR = LM339 pin 1**
-Expected: square wave, 0V to 5V, ~5.3kHz
+Expected: square wave, 0V to ~4.5V, ~5.3kHz
+
+> Note: LM339 open-collector output high = ~4.5V (not 5V) — this is normal per datasheet
 
 ---
 
-## Wiring Summary Diagram
+## Wiring Summary
 
 ```
 +5V ──┬── MCP6004 pin4
-      ├── LM339 pin4 (VCC)
+      ├── LM339 pin3 (VCC)
       ├── 10kΩ ──► VCM node ──10kΩ──► GND
       └── 10kΩ ──► LM339 pin1 (pull-up)
 
-VCM ──┬── MCP6004 pin3 (IN+)
-      └── LM339 pin2 (IN1-)
+VCM ──┬── MCP6004 pin3 (IN+A)
+      └── LM339 pin6 (IN1−)
 
 MCP6004 pin1 (VRAMP)
-      ├──10nF──► MCP6004 pin2
-      └──10kΩ──► LM339 pin3 (IN1+)
+      ├── 10nF ──► MCP6004 pin2 (integrator cap)
+      └── 10kΩ ──► LM339 pin7 (IN1+)
 
 LM339 pin1 (VSQR)
-      ├──22kΩ──► MCP6004 pin2 (IN-)
-      └──47kΩ──► LM339 pin3 (IN1+)
+      ├── 22kΩ ──► MCP6004 pin2 (IN−A)
+      └── 47kΩ ──► LM339 pin7 (IN1+) hysteresis
 
 GND ──┬── MCP6004 pin11
-      └── LM339 pin11
+      └── LM339 pin12
 ```
 
 ---
@@ -113,15 +117,42 @@ GND ──┬── MCP6004 pin11
 
 | CHB to | Expected |
 |--------|---------|
-| MCP6004 pin 1 | Triangle wave ~1Vpp at 2.5V, 5.3kHz |
-| LM339 pin 1 | Square wave 0-5V, 5.3kHz |
+| MCP6004 pin 1 | Triangle wave ~1.4Vpp, centered 2.5V, ~5.3kHz |
+| LM339 pin 1 | Square wave 0V to ~4.5V, ~5.3kHz |
 
 ---
 
-## ADALM Settings (Lab 1 — No input needed, self-oscillating)
+## ADALM PixelPulse2 Settings
 
 | Parameter | Value |
 |-----------|-------|
-| CHA | NOT used (no waveform needed) |
+| CHA | NOT used |
 | CHB | Probe only |
-| Timebase | 50µs/div or 100µs/div |
+| Timebase | 200µs/div |
+
+---
+
+## Component Values
+
+| Component | Value | Color Code | Purpose |
+|-----------|-------|------------|---------|
+| R1 | 22kΩ | Red-Red-Orange | Integrator input |
+| R2 | 10kΩ | Brown-Black-Orange | VRAMP to Schmitt IN+ |
+| R3 | 47kΩ | Yellow-Violet-Orange | Hysteresis feedback |
+| C1 | 10nF | marked 103 | Integrator capacitor |
+| R_pullup | 10kΩ | Brown-Black-Orange | LM339 open-collector |
+| R_VCM×2 | 10kΩ each | Brown-Black-Orange | VCM divider |
+
+---
+
+## Pre-build Checklist
+
+| Check | ✓ |
+|-------|---|
+| MCP6004 notch facing correct direction | ☐ |
+| LM339 notch facing correct direction | ☐ |
+| VCM = 2.5V verified before connecting ICs | ☐ |
+| 10nF between MCP6004 pin1 and pin2 | ☐ |
+| 10kΩ pull-up from LM339 pin1 to +5V | ☐ |
+| All GNDs common (ADALM + MCP6004 + LM339) | ☐ |
+| pin3 of MCP6004 has ONLY VCM wire (nothing else) | ☐ |
