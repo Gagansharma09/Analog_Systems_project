@@ -1,4 +1,4 @@
-# BS Analog Systems Lab — IIT Madras
+# BS Analog Systems project — IIT Madras
 
 **Course:** EE2003 · Analog Systems Lab  
 **Project:** End-to-end Class-D Audio Amplifier — from signal filtering to speaker output  
